@@ -7,8 +7,9 @@ arXiv preprint arXiv:1807.03748 (2018).
 '''
 from data_utils import SortedNumberGenerator
 from os.path import join, basename, dirname, exists
-import keras
-from keras import backend as K
+import tensorflow.keras as keras
+from tensorflow.keras import backend as K
+import numpy as np
 
 
 def network_encoder(x, code_size):
@@ -97,7 +98,7 @@ def network_cpc(image_shape, terms, predict_terms, code_size, learning_rate):
     encoder_input = keras.layers.Input(image_shape)
     encoder_output = network_encoder(encoder_input, code_size)
     encoder_model = keras.models.Model(encoder_input, encoder_output, name='encoder')
-    encoder_model.summary()
+    # encoder_model.summary()
 
     # Define rest of model
     x_input = keras.layers.Input((terms, image_shape[0], image_shape[1], image_shape[2]))
@@ -120,7 +121,7 @@ def network_cpc(image_shape, terms, predict_terms, code_size, learning_rate):
         loss='binary_crossentropy',
         metrics=['binary_accuracy']
     )
-    cpc_model.summary()
+    # cpc_model.summary()
 
     return cpc_model
 
@@ -130,11 +131,11 @@ def train_model(epochs, batch_size, output_dir, code_size, lr=1e-4, terms=4, pre
     # Prepare data
     train_data = SortedNumberGenerator(batch_size=batch_size, subset='train', terms=terms,
                                        positive_samples=batch_size // 2, predict_terms=predict_terms,
-                                       image_size=image_size, color=color, rescale=True)
+                                       image_size=image_size, color=color, rescale=True).next()
 
     validation_data = SortedNumberGenerator(batch_size=batch_size, subset='valid', terms=terms,
                                             positive_samples=batch_size // 2, predict_terms=predict_terms,
-                                            image_size=image_size, color=color, rescale=True)
+                                            image_size=image_size, color=color, rescale=True).next()
 
     # Prepares the model
     model = network_cpc(image_shape=(image_size, image_size, 3), terms=terms, predict_terms=predict_terms,
@@ -146,9 +147,9 @@ def train_model(epochs, batch_size, output_dir, code_size, lr=1e-4, terms=4, pre
     # Trains the model
     model.fit_generator(
         generator=train_data,
-        steps_per_epoch=len(train_data),
+        steps_per_epoch=390,
         validation_data=validation_data,
-        validation_steps=len(validation_data),
+        validation_steps=390,
         epochs=epochs,
         verbose=1,
         callbacks=callbacks
